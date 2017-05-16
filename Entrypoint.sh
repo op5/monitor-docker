@@ -34,23 +34,39 @@ service_online(){
 
 
 advertise_masters(){
+	if [ $1 == "add" ]; then
+		action=add
+	else
+		action=remove
+	fi
+
+	echo -e '\033[33m' Performing ${action} on Masters '\033[39;49m'
+
 	for i in "${!masters[@]}"
 	do
 		mon sshkey fetch ${masters[i]}  
 		asmonitor mon sshkey fetch ${masters[i]}
-		mon node add ${masters[i]} type=master
-		mon node ctrl ${masters[i]} mon node add ${SELF_HOSTNAME} type=poller hostgroup=${HOSTGROUPS} takeover=no
+		mon node ${action} ${masters[i]} type=master
+		mon node ctrl ${masters[i]} mon node ${action} ${SELF_HOSTNAME} type=poller hostgroup=${HOSTGROUPS} takeover=no
 		mon node ctrl ${masters[i]} mon restart
 	done
 }
 
 advertise_peers(){
+	if [ $1 == "add" ]; then
+		action=add
+	else
+		action=remove
+	fi
+	
+	echo -e '\033[33m' Performing ${action} On Peers '\033[39;49m'	
+	
         for i in "${!peers[@]}"
         do
                 mon sshkey fetch ${peers[i]}
                 asmonitor mon sshkey fetch ${peers[i]}
-                mon node add ${peers[i]} type=peer
-                mon node ctrl ${peers[i]} mon node add ${SELF_HOSTNAME} type=peer
+                mon node ${action} ${peers[i]} type=peer
+                mon node ctrl ${peers[i]} mon node ${action} ${SELF_HOSTNAME} type=peer
                 mon node ctrl ${peers[i]} mon restart
         done
 
@@ -59,19 +75,23 @@ advertise_peers(){
 get_config(){
 	# Only getting config from one master because mon oconf always exits 0
 	# The fetch will initiate a restart of the the local merlind.
-	# This should be the only time we need to to restart locally since new pollers will restart us. 
+	# This should be the only time we need to to restart locally since new pollers will restart us. 	
+	echo -e '\033[33m' Trying To Get Configuration From ${masters[1]} '\033[39;49m'
 	mon oconf fetch ${masters[1]} 
 }
 
-keep_swimming(){
+keep_swimming(){	
+	echo -e '\033[33m' Done '\033[39;49m'
 	tail -f /var/log/op5/merlin/daemon.log	
 }
 
 
 main(){
 	service_online
-	advertise_masters
-	advertise_peers
+	advertise_masters remove
+	advertise_masters add
+	advertise_peers remove
+	advertise_peers add
 	get_config
 	keep_swimming
 }
