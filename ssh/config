@@ -1,0 +1,5 @@
+Host *
+	IdentityFile ~/.ssh/id_ed
+
+Host *oller*
+	Port 2222
