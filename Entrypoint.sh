@@ -80,6 +80,14 @@ get_config(){
 	mon oconf fetch ${masters[1]} 
 }
 
+
+shutdown(){
+	# If container is gracefully shutdown with SIGTERM (e.g. docker stop), remove
+	# pre-emptively remove itself
+	advertise_peers remove
+	advertise_masters remove
+}
+
 keep_swimming(){	
 	echo -e '\033[33m' Done '\033[39;49m'
 	tail -f /var/log/op5/merlin/daemon.log	
@@ -96,4 +104,5 @@ main(){
 	keep_swimming
 }
 
+trap "shutdown" SIGTERM
 main
