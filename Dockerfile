@@ -1,11 +1,9 @@
 FROM centos:6
 
 RUN yum -y install openssh-server \
-&& curl http://repos.op5.com/tarballs/op5-monitor-7.3.11-20170428.tar.gz -o /tmp/op5-software.tar.gz \
-&& tar -zxf /tmp/op5-software.tar.gz -C /tmp \
+&& curl http://repos.op5.com/tarballs/op5-monitor-7.3.11-20170428.tar.gz | tar -zx -C /tmp \
 && cd /tmp/op5-monitor-7.3.11 && ./install.sh --silent \
-&& rm -f /tmp/op5-software.tar.gz \
-&& cd /tmp && rm -rf /tmp/op5-monitor-7.3.11 \
+&& rm -rf /tmp/op5* \
 && yum clean all
 
 
