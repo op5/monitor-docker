@@ -84,6 +84,7 @@ get_config(){
 shutdown(){
 	# If container is gracefully shutdown with SIGTERM (e.g. docker stop), remove
 	# pre-emptively remove itself
+	echo -e '\033[33m' Shutdown Initiated, Removing From Peer Lists '\033[39;49m'
 	advertise_peers remove
 	advertise_masters remove
 }
