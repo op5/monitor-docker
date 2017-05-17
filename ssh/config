@@ -1,5 +1,7 @@
 Host *
-	IdentityFile ~/.ssh/id_ed
+  IdentityFile ~/.ssh/id_rsa
+  StrictHostKeyChecking no
+  UserKnownHostsFile=/dev/null
 
 Host *oller*
 	Port 2222

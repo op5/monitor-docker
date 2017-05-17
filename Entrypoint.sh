@@ -53,6 +53,9 @@ advertise_masters(){
 }
 
 advertise_peers(){
+  if [ -z ${PEER_ADDRESSES} ]; then
+    return
+  fi
 	if [ $1 == "add" ]; then
 		action=add
 	else
@@ -76,8 +79,8 @@ get_config(){
 	# Only getting config from one master because mon oconf always exits 0
 	# The fetch will initiate a restart of the the local merlind.
 	# This should be the only time we need to to restart locally since new pollers will restart us. 	
-	echo -e '\033[33m' Trying To Get Configuration From ${masters[1]} '\033[39;49m'
-	mon oconf fetch ${masters[1]} 
+	echo -e '\033[33m' Trying To Get Configuration From ${masters[0]} '\033[39;49m'
+	mon node ctrl ${masters[0]} asmonitor mon oconf push ${SELF_HOSTNAME}
 }
 
 
