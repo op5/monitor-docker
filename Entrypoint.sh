@@ -94,7 +94,8 @@ shutdown(){
 
 keep_swimming(){	
 	echo -e '\033[33m' Done '\033[39;49m'
-	tail -f /var/log/op5/merlin/daemon.log	
+	tail -f /var/log/op5/merlin/daemon.log &	
+	wait $!
 }
 
 
