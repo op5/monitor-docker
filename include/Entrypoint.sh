@@ -99,7 +99,7 @@ shutdown(){
 }
 
 keep_swimming(){	
-    if [ $1 -ne 1 ];then
+    if [ $1 -ne 1 ]; then
         print "success" "Done"
 	    tail -f /var/log/op5/merlin/daemon.log &	
 	    wait $!
@@ -155,7 +155,7 @@ main(){
 	advertise_peers remove
 	advertise_peers add
 	get_config
-	keep_swimming
+	keep_swimming ${DEBUG}
 }
 
 trap "shutdown" SIGTERM
