@@ -145,9 +145,9 @@ run_debug(){
     else
         print "success" "My Hostgroups Are: ${HOSTGROUPS}"
     fi
-
-#SET OP5 LOGLEVEL
-
+    
+    # Change OP5 Log levels 
+    sed -i 's/level:.*/level: debug/' /etc/op5/log.yml
 }
 
 
