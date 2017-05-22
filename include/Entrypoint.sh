@@ -98,20 +98,26 @@ shutdown(){
 	advertise_masters remove
 }
 
-keep_swimming(){	
-    if [ $1 -ne 1 ]; then
+keep_swimming(){
+    if [ "${debugging}" == "1" ]; then
+        read -n1 -r -p "Press Any Key To Enter The Debug Console..."
+        debug_console
+    else    
         print "success" "Done"
 	    tail -f /var/log/op5/merlin/daemon.log &	
 	    wait $!
-    else
-        tmux new-session -d '/bin/bash' \; rename-window -t 0 SHELL \; new-window -d 'tail -f /var/log/messages'
     fi
 }
 
+debug_console(){
+    tmux new-session -d '/bin/bash' \; rename-window -t 0 SHELL \; new-window -d 'tail -f /var/log/messages'
+}
+
 check_debug(){
-    if [ $1 -ne 1 ]; then
+    if [ -z "${DEBUG}" ] || [ "${DEBUG}" == "0" ]; then
         return 
     else
+        debugging=1
         print "warn" "DEBUG INFORMATION WILL BE DISPLAYED"
         run_debug
     fi
@@ -140,22 +146,20 @@ run_debug(){
         print "success" "My Hostgroups Are: ${HOSTGROUPS}"
     fi
 
- 
-
 #SET OP5 LOGLEVEL
 
 }
 
 
 main(){
-    check_debug ${DEBUG}
+    check_debug
 	service_online
 	advertise_masters remove
 	advertise_masters add
 	advertise_peers remove
 	advertise_peers add
 	get_config
-	keep_swimming ${DEBUG}
+	keep_swimming
 }
 
 trap "shutdown" SIGTERM
