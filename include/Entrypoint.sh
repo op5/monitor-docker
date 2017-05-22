@@ -114,12 +114,12 @@ debug_console(){
 }
 
 check_debug(){
-    if [ -z "${DEBUG}" ] || [ "${DEBUG}" == "0" ]; then
-        return 
-    else
+    if [ "${DEBUG,,}" == "true" ] || [ "${DEBUG}" == "1" ]; then
         debugging=1
         print "warn" "DEBUG INFORMATION WILL BE DISPLAYED"
         run_debug
+    else
+        return
     fi
 }
 
