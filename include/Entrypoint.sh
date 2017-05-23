@@ -114,12 +114,12 @@ debug_console(){
 }
 
 check_debug(){
-    if [ -z "${DEBUG}" ] || [ "${DEBUG}" == "0" ]; then
-        return 
-    else
+    if [ "${DEBUG,,}" == "true" ] || [ "${DEBUG}" == "1" ]; then
         debugging=1
         print "warn" "DEBUG INFORMATION WILL BE DISPLAYED"
         run_debug
+    else
+        return
     fi
 }
 
@@ -145,9 +145,9 @@ run_debug(){
     else
         print "success" "My Hostgroups Are: ${HOSTGROUPS}"
     fi
-
-#SET OP5 LOGLEVEL
-
+    
+    # Change OP5 Log levels 
+    sed -i 's/level:.*/level: debug/' /etc/op5/log.yml
 }
 
 
