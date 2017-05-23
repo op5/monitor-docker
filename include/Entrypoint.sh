@@ -52,7 +52,11 @@ advertise_masters(){
 	do
 		mon sshkey fetch ${masters[i]}  
 		asmonitor mon sshkey fetch ${masters[i]}
-		mon node ${action} ${masters[i]} type=master
+        if [ ${action} == "add" ]; then
+		    mon node ${action} ${masters[i]} type=master
+        else
+            mon node ${action} ${masters[i]}
+        fi
 		mon node ctrl ${masters[i]} mon node ${action} ${SELF_HOSTNAME} type=poller hostgroup=${HOSTGROUPS} takeover=no
 		mon node ctrl ${masters[i]} mon restart
 	done
@@ -114,7 +118,7 @@ keep_swimming(){
 }
 
 debug_console(){
-    tmux new-session -d '/bin/bash' \; rename-window -t 0 SHELL \; new-window -d 'tail -f /var/log/messages' \; attach
+    tmux new-session -d '/bin/bash' \; rename-window -t 0 Shell \; new-window -d 'multitail --merge-all /var/log/op5/merlin/daemon.log /var/log/op5/merlin/neb.log' \; rename-window -t 1 Merlind \; attach
 }
 
 check_debug(){
@@ -157,6 +161,9 @@ run_debug(){
     
     # Change OP5 Log levels 
     sed -i 's/level:.*/level: debug/' /etc/op5/log.yml
+
+    ########################################### Change Merlin Log Levels
+    
 }
 
 
