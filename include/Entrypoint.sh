@@ -110,7 +110,7 @@ keep_swimming(){
 }
 
 debug_console(){
-    tmux new-session -d '/bin/bash' \; rename-window -t 0 SHELL \; new-window -d 'tail -f /var/log/messages'
+    tmux new-session -d '/bin/bash' \; rename-window -t 0 SHELL \; new-window -d 'tail -f /var/log/messages' \; attach
 }
 
 check_debug(){
