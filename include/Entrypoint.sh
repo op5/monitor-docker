@@ -5,10 +5,11 @@
 # HOSTGROUPS must be a comma delimted environment variable
 # SELF_HOSTNAME must be set
 # PEER_ADDRESSES must be set
-# DEBUG is a boolean 
+# DEBUG is a boolean, accepts 1 or true
 #
 #############################################
 
+# Create Array From Comma Delimited List
 masters=(${MASTER_ADDRESSES//,/ })
 peers=(${PEER_ADDRESSES//,/ })
 
@@ -37,7 +38,6 @@ service_online(){
 	service smsd start
 	service collector start
 }
-
 
 advertise_masters(){
 	if [ $1 == "add" ]; then
@@ -99,6 +99,10 @@ shutdown(){
 }
 
 keep_swimming(){
+    # This function should be the last thing to run. This is how the Container will
+    # persist. Under normal conditions we show a tail of merlins log and fork it 
+    # because this script needs to be PID 1 with NO CHILDREN due to the way parent
+    # processes handle SIGTERM                                                      
     if [ "${debugging}" == "1" ]; then
         read -n1 -r -p "Press Any Key To Enter The Debug Console..."
         debug_console
@@ -114,6 +118,8 @@ debug_console(){
 }
 
 check_debug(){
+    # This should be the first thing to run. Other functions that need to
+    # figure out if we are in debug mode should check if ${debugging} is 1
     if [ "${DEBUG,,}" == "true" ] || [ "${DEBUG}" == "1" ]; then
         debugging=1
         print "warn" "DEBUG INFORMATION WILL BE DISPLAYED"
@@ -125,6 +131,9 @@ check_debug(){
 
 
 run_debug(){
+    # If debugging is 1, anything to run before the debug console
+    # should be placed here.
+    
     if [ -z ${MASTER_ADDRESSES} ]; then
         print "error" "No Master Addresses Are Set!"
     else
@@ -162,5 +171,6 @@ main(){
 	keep_swimming
 }
 
+# Graceful shutdown handling and run main()
 trap "shutdown" SIGTERM
 main
