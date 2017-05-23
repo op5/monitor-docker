@@ -156,9 +156,8 @@ run_debug(){
     
     # Change OP5 Log levels 
     sed -i 's/level:.*/level: debug/' /etc/op5/log.yml
+    sed -i 's/log_level = info;/log_level = debug;/' /opt/monitor/op5/merlin/merlin.conf
 
-    ########################################### Change Merlin Log Levels
-    
 }
 
 
