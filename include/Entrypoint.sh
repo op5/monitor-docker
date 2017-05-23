@@ -40,47 +40,42 @@ service_online(){
 }
 
 advertise_masters(){
-	if [ $1 == "add" ]; then
-		action=add
-	else
-		action=remove
-	fi
-
-    print "info" "Performing ${action} On Masters"
-
-	for i in "${!masters[@]}"
-	do
-		mon sshkey fetch ${masters[i]}  
-		asmonitor mon sshkey fetch ${masters[i]}
-        if [ ${action} == "add" ]; then
-		    mon node ${action} ${masters[i]} type=master
-        else
-            mon node ${action} ${masters[i]}
-        fi
-		mon node ctrl ${masters[i]} mon node ${action} ${SELF_HOSTNAME} type=poller hostgroup=${HOSTGROUPS} takeover=no
-		mon node ctrl ${masters[i]} mon restart
-	done
+    for i in "${!masters[@]}"
+    do
+	    if [ $1 == "add" ]; then
+            print "info" "Performing Add On ${masters[i]}"
+            mon sshkey fetch ${masters[i]}
+            asmonitor mon sshkey fetch ${masters[i]}
+            mon node add ${masters[i]} type=master
+            mon node ctrl ${masters[i]} mon node add ${SELF_HOSTNAME} type=poller hostgroup=${HOSTGROUPS} takeover=no
+            mon node ctrl ${masters[i]} mon restart
+	    else
+		    print "info" "Performing Remove On ${masters[i]}"
+            mon node ctrl ${masters[i]} mon node remove ${SELF_HOSTNAME}
+            mon node ctrl ${masters[i]} mon restart
+	    fi
+    done
 }
 
 advertise_peers(){
-  if [ -z ${PEER_ADDRESSES} ]; then
-    return
-  fi
-	if [ $1 == "add" ]; then
-		action=add
-	else
-		action=remove
-	fi
-	
-    print "info" "Performing ${action} On Peers"
-	
-        for i in "${!peers[@]}"
+    if [ -z ${PEER_ADDRESSES} ]; then
+        return
+    fi
+    
+    for i in "${!peers[@]}"
         do
+            if [ $1 == "add" ]; then
+                print "info" "Performing Add On ${peers[i]}"
                 mon sshkey fetch ${peers[i]}
                 asmonitor mon sshkey fetch ${peers[i]}
-                mon node ${action} ${peers[i]} type=peer
-                mon node ctrl ${peers[i]} mon node ${action} ${SELF_HOSTNAME} type=peer
+                mon node add ${peers[i]} type=peer
+                mon node ctrl ${peers[i]} mon node add ${SELF_HOSTNAME} type=peer
                 mon node ctrl ${peers[i]} mon restart
+            else
+		        print "info" "Performing Remove On ${peers[i]}"
+                mon node ctrl ${peers[i]} mon node remove ${SELF_HOSTNAME}
+                mon node ctrl ${peers[i]} mon restart
+	        fi	
         done
 
 }
