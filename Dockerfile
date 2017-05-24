@@ -1,6 +1,7 @@
 FROM centos:6
 
-RUN yum -y install tmux multitail openssh-server \
+# Install EPEL first or else tmux and multitail wont be installed
+RUN yum -y install epel-release && yum -y install tmux multitail openssh-server \
 && curl http://repos.op5.com/tarballs/op5-monitor-7.3.11-20170428.tar.gz | tar -zx -C /tmp \
 && cd /tmp/op5-monitor-7.3.11 && ./install.sh --silent \
 && rm -rf /tmp/op5* \
