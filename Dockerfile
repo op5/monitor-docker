@@ -1,24 +1,46 @@
-FROM centos:6
+#!/bin/bash
+set -e
 
-# Install EPEL first or else tmux and multitail wont be installed
-RUN yum -y install epel-release && yum -y install tmux multitail openssh-server \
-&& curl http://repos.op5.com/tarballs/op5-monitor-7.3.11-20170428.tar.gz | tar -zx -C /tmp \
-&& cd /tmp/op5-monitor-7.3.11 && ./install.sh --silent \
-&& rm -rf /tmp/op5* \
-&& yum clean all
+if [ -z "${SSH_KEY}" ] || [ -z "${SSH_PUB_KEY}" ]; then
+    echo "SSH Key information is required. Run gen_secrets.sh and follow instructions"
+    exit 1
+fi
 
+if [ -z "${TARGET_HOST}" ]; then
+    echo "Can not determain TARGET_HOST. This should be the IP of the HOST the container is being deployed to."
+    exit 1
+fi 
 
-# OP5 Web UI, NRPE, Merlind, SSH, SNMPd 
-EXPOSE 80 443 5666 15551 2222 162
+if [ -z "${PEER_ADDRESSES}" ] || [ -z "${PEER_HOSTNAMES}" ]; then
+    echo "Can not determain PEER IP Addresses or Hostnames. Please configure in op5.targetip.env file."
+    exit 1
+fi
 
+peers=(${PEER_ADDRESSES//,/ })
+peer_hn=(${PEER_HOSTNAMES//,/ })
 
-ADD ["include/ssh/","/tmp/ssh"] 
-ADD ["include/Entrypoint.sh","/Entrypoint.sh"]
-ADD ["include/tmux.conf","/etc/tmux.conf"]
+for i in "${!peer_hn[@]}";
+do
+        tmp_ip=$(awk -v hn="${peer_hn[i]}" '$0 ~ hn{print $1}' /etc/hosts)
+        if [[ $tmp_ip == ${peers[i]} ]]; then
+                echo "match found"
+        else
+                echo "${peers[i]} ${peer_hn[i]}" >> /etc/hosts
+        fi
+done
 
-RUN cp -a /tmp/ssh/ /root/.ssh/ && chown -R root:root /root/.ssh/ && chmod -R 700 /root/.ssh && chmod 600 /root/.ssh/*
-RUN cp -a /tmp/ssh/ /opt/monitor/.ssh/ && chown -R monitor /opt/monitor/.ssh && chmod -R 700 /opt/monitor/.ssh && chmod 600 /opt/monitor/.ssh/*
-RUN chmod +x /Entrypoint.sh
+echo -e $SSH_KEY > /root/.ssh/id_rsa && chmod 600 /root/.ssh/*
+echo -e $SSH_PUB_KEY > /root/.ssh/authorized_keys && chmod 600 /root/.ssh/*
+echo -e $SSH_PUB_KEY > /root/.ssh/id_rsa.pub && chmod 600 /root/.ssh/*
+echo -e $SSH_KEY > /opt/monitor/.ssh/id_rsa && chmod 600 /opt/monitor/.ssh/*
+echo -e $SSH_PUB_KEY > /opt/monitor/.ssh/authorized_keys && chmod 600 /opt/monitor/.ssh/*
+echo -e $SSH_PUB_KEY > /opt/monitor/.ssh/id_rsa.pub && chmod 600 /opt/monitor/.ssh/*
+tmp_ip=$(echo $TARGET_HOST | awk -F"." '{print $1"."$2"."$3".*"}')
+sed -i "s/SSH_HOST_IP/$tmp_ip/" /tmp/ssh_config
+cp /tmp/ssh_config /root/.ssh/config
+cp /tmp/ssh_config /opt/monitor/.ssh/config
+chown -R monitor /opt/monitor/.ssh
 
-ENTRYPOINT ["/Entrypoint.sh"]
-
+grep -q "notifies = no" /opt/monitor/op5/merlin/merlin.conf || sed -i '/module {/a\        notifies = no' /opt/monitor/op5/merlin/merlin.conf
+# /setup_interfaces
+/Entrypoint.sh
