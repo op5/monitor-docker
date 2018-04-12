@@ -2,7 +2,7 @@ version:  '2'
 
 services:
    op5:
-     image: ${IMAGE}
+     image: op5com/op5-monitor-poller
      restart: always
      env_file:
        - variables.env
