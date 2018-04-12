@@ -11,11 +11,11 @@
 
 # Create Array From Comma Delimited List
 masters=(${MASTER_ADDRESSES//,/ })
-peers=(${PEER_ADDRESSES//,/ })
+peers=(${PEER_HOSTNAMES//,/ })
 
 print(){
     if [ $1 == "info" ];then 
-        echo -e '\033[37m' [INFO] $2 '\033[39;49m'
+        echo -e '\033[36m' [INFO] $2 '\033[39;49m'
     elif [ $1 == "warn" ];then
         echo -e '\033[33m' [WARN] $2 '\033[39;49m'
     elif [ $1 == "error" ]; then
@@ -48,6 +48,7 @@ advertise_masters(){
             asmonitor mon sshkey fetch ${masters[i]}
             mon node add ${masters[i]} type=master
             mon node ctrl ${masters[i]} mon node add ${SELF_HOSTNAME} type=poller hostgroup=${HOSTGROUPS} takeover=no
+	    mon node ctrl  ${masters[i]} -- /usr/local/scripts/add_sync.sh ${SELF_HOSTNAME}
             mon node ctrl ${masters[i]} mon restart
         else
             print "info" "Performing Remove On ${masters[i]}"
@@ -58,26 +59,39 @@ advertise_masters(){
 }
 
 advertise_peers(){
-    if [ -z ${PEER_ADDRESSES} ]; then
-        return
-    fi
-    
-    for i in "${!peers[@]}"
-        do
-            if [ $1 == "add" ]; then
-                print "info" "Performing Add On ${peers[i]}"
-                mon sshkey fetch ${peers[i]}
-                asmonitor mon sshkey fetch ${peers[i]}
-                mon node add ${peers[i]} type=peer
-                mon node ctrl ${peers[i]} mon node add ${SELF_HOSTNAME} type=peer
-                mon node ctrl ${peers[i]} mon restart
-            else
-                print "info" "Performing Remove On ${peers[i]}"
-                mon node ctrl ${peers[i]} mon node remove ${SELF_HOSTNAME}
-                mon node ctrl ${peers[i]} mon restart
-            fi
-        done
+#    if [ -z ${PEER_ADDRESSES} ]; then
+#        return
+#    fi
 
+    if [ $1 == "add" ]; then
+        for i in "${!peers[@]}"
+            do
+                nc -z ${peers[i]} 15551
+                if [[ "$?" == "0" ]]; then
+                    print "info" "Performing Add On ${peers[i]}"
+                    mon sshkey fetch ${peers[i]}
+                    asmonitor mon sshkey fetch ${peers[i]}
+                    mon node add ${peers[i]} type=peer
+                    mon node ctrl ${peers[i]} mon node add ${SELF_HOSTNAME} type=peer
+                    mon node ctrl ${peers[i]} mon restart
+                else
+                    print "error" "${peers[i]} not up, ignoring."
+                fi
+            done
+     else
+         # We need to parse the merlin.conf file to remove peers that we didnt used to know about
+         # when we were started.
+         # This can be changed when OP5 implements a way to get a peer list.
+         toremove=$( grep "^peer" /opt/monitor/op5/merlin/merlin.conf | awk '{print $2}' | paste -d " " -s )
+
+         for i in "${!toremove[@]}"
+            do
+                print "info" "Performing Remove On ${toremove[i]}"
+                mon node ctrl ${toremove[i]} mon node remove ${SELF_HOSTNAME}
+                mon node ctrl ${toremove[i]} mon restart
+            done
+    fi
+   
 }
 
 get_config(){
@@ -97,23 +111,34 @@ shutdown(){
     advertise_masters remove
 }
 
+
 keep_swimming(){
     # This function should be the last thing to run. This is how the Container will
     # persist. Under normal conditions we show a tail of merlins log and fork it 
     # because this script needs to be PID 1 with NO CHILDREN due to the way parent
     # processes handle SIGTERM                                                      
+    # The container must be run with -it for proper console access
     if [ "${debugging}" == "1" ]; then
         read -n1 -r -p "Press Any Key To Enter The Debug Console..."
         debug_console
     else    
-        print "success" "Done"
+        print "info" "Checking For Online Peers"
+        
+        advertise_peers add 
+        
+        print "info" "Getting Config From Master"
+        get_config
+
         tail -f /var/log/op5/merlin/daemon.log &
         wait $!
+
+
+        
     fi
 }
 
 debug_console(){
-    tmux new-session -d '/bin/bash' \; rename-window -t 0 Shell \; new-window -d 'multitail --merge-all /var/log/op5/merlin/daemon.log /var/log/op5/merlin/neb.log' \; rename-window -t 1 Merlind \; attach
+    tmux new-session -d '/bin/bash' \; rename-window -t 0 Shell \; new-window -d 'multitail --mergeall /var/log/op5/merlin/daemon.log /var/log/op5/merlin/neb.log' \; rename-window -t 1 Merlind \; attach
 }
 
 check_debug(){
@@ -164,11 +189,13 @@ run_debug(){
 main(){
     check_debug
     service_online
-    advertise_masters remove
     advertise_masters add
-    advertise_peers remove
-    advertise_peers add
-    get_config
+#    advertise_peers add
+#    get_config
+#
+# We will no longer try to add ourselves to peers or get configuration on startup.
+# This functionaility will now be handled in Keep swimming.
+#
     keep_swimming
 }
 
