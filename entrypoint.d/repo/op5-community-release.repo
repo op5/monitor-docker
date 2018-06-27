@@ -1,0 +1,7 @@
+##### Unsupported tools that are not part of op5 monitor
+[op5-community]
+name=op5 Community
+baseurl=http://repos.op5.com/el$releasever/$basearch/community/master/updates
+enabled=0
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-op5

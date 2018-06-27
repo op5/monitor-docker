@@ -1,0 +1,7 @@
+##### Unsupported tools that are not part of op5 monitor
+[op5-community-source]
+name=op5 Community Source
+baseurl=http://repos.op5.com/centos/$releasever/$basearch/community/master/SRPMS
+enabled=0
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-op5

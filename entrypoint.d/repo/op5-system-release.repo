@@ -1,0 +1,27 @@
+[op5-centos-base]
+name=op5 CentOS Base
+baseurl=http://repos.op5.com/el$releasever/$basearch/centos/6/base
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
+enabled=1
+gpgcheck=1
+
+[op5-centos-updates]
+name=op5 CentOS Updates
+baseurl=http://repos.op5.com/el$releasever/$basearch/centos/6/updates
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
+enabled=1
+gpgcheck=1
+
+[op5-system-base]
+name=op5 System Base
+baseurl=http://repos.op5.com/el$releasever/$basearch/system/6/base
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-op5
+enabled=1
+gpgcheck=1
+
+[op5-system-updates]
+name=op5 System Updates
+baseurl=http://repos.op5.com/el$releasever/$basearch/system/6/updates
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-op5
+enabled=1
+gpgcheck=1

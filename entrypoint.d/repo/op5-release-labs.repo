@@ -1,0 +1,7 @@
+##### op5 Monitor Labs
+[op5-monitor-labs-updates]
+name=op5 Monitor Labs Updates
+baseurl=http://repos.op5.com/el$releasever/$basearch/labs/master/updates
+enabled=0
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-op5
