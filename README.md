@@ -47,6 +47,7 @@ $ docker build --rm -f Dockerfile -t monitor-docker:latest .
 
 Run the docker container:
 
+```
 # Standalone OP5 Server
 $ docker run -d -p 443:443 -p 2222:2222 monitor-docker:latest
 
@@ -95,6 +96,8 @@ $ docker stop -t 90 op5poller4.op5.local
 $ docker stop -t 90 op5master1.op5.local
 $ docker stop -t 90 op5master3.op5.local
 $ docker stop -t 90 op5master2.op5.local
+
+```
 
 Now you can reach OP5 Monitor on:
 
