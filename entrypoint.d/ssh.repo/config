@@ -1,7 +1,0 @@
-Host *
-  IdentityFile ~/.ssh/id_rsa
-  StrictHostKeyChecking no
-  UserKnownHostsFile=/dev/null
-
-Host *Poller*
-	Port 2222
