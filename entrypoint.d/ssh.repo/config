@@ -3,5 +3,5 @@ Host *
   StrictHostKeyChecking no
   UserKnownHostsFile=/dev/null
 
-Host *.op5.local
+Host *Poller*
 	Port 2222

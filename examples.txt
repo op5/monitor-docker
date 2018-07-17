@@ -1,0 +1,48 @@
+# Standalone OP5 Server
+$ docker run -d -p 443:443 -p 2222:2222 monitor-docker:latest
+
+# Standalone OP5 Server from Backup
+$ docker run -d -p 443:443 -p 2222:2222 -v /tmp/backups/:/usr/libexec/entrypoint.d/backups/ -e IMPORT_BACKUP=<backup file>.backup monitor-docker:latest
+
+# Standalone OP5 Server with license file
+$ docker run -d -p 443:443 -p 2222:2222 -v /tmp/licenses/:/usr/libexec/entrypoint.d/licenses/ -e LICENSE_KEY=<license file>.lic monitor-docker:latest
+
+# Create a Distributed OP5 Instance for lab work
+
+# Create user network
+$ docker network create --subnet 172.18.0.0/24 op5net
+
+# Create your first master
+docker run -d -p 443:443 -p 2222:2222 -p 15551 -e SELF_HOSTNAME=op5master1.op5.local --name op5master1.op5.local --net=op5net monitor-docker:latest
+
+# Create your first master peer
+docker run -d -p 443 -p 2222 -p 15551 -e SELF_HOSTNAME=op5master2.op5.local --name op5master2.op5.local --net=op5net -e IS_PEER="YES" -e PEER_HOSTNAMES="op5master1.op5.local" monitor-docker:latest
+
+# Create a second master peer
+docker run -d -p 443 -p 2222 -p 15551 -e SELF_HOSTNAME=op5master3.op5.local --name op5master3.op5.local --net=op5net -e IS_PEER="YES" -e PEER_HOSTNAMES="op5master1.op5.local,op5master2.op5.local" monitor-docker:latest
+
+# Create your first poller ***ENSURE HOSTGROUPS ARE CREATED AND WORKING***
+docker run -d -p 443 -p 2222 -p 15551 -e SELF_HOSTNAME=op5poller1.op5.local --name op5poller1.op5.local --net=op5net -e IS_POLLER="YES" -e HOSTGROUPS="pollergroup1" -e MASTER_ADDRESSES="op5master1.op5.local,op5master2.op5.local,op5master3.op5.local" monitor-docker:latest
+
+# Create your first poller peer
+docker run -d -p 443 -p 2222 -p 15551 -e SELF_HOSTNAME=op5poller2.op5.local --name op5poller2.op5.local --net=op5net -e IS_POLLER="YES" -e HOSTGROUPS="pollergroup1" IS_PEER="YES" -e PEER_HOSTNAMES="op5poller1.op5.local" -e MASTER_ADDRESSES="op5master1.op5.local,op5master2.op5.local,op5master3.op5.local" monitor-docker:latest
+
+# Create your first poller ***ENSURE HOSTGROUPS ARE CREATED AND WORKING***
+docker run -d -p 443 -p 2222 -p 15551 -e SELF_HOSTNAME=op5poller3.op5.local --name op5poller3.op5.local --net=op5net -e IS_POLLER="YES" -e HOSTGROUPS="pollergroup2" -e MASTER_ADDRESSES="op5master1.op5.local,op5master2.op5.local,op5master3.op5.local" monitor-docker:latest
+
+# Create your first poller peer
+docker run -d -p 443 -p 2222 -p 15551 -e SELF_HOSTNAME=op5poller4.op5.local --name op5poller4.op5.local --net=op5net -e IS_POLLER="YES" -e HOSTGROUPS="pollergroup2" IS_PEER="YES" -e PEER_HOSTNAMES="op5poller3.op5.local" -e MASTER_ADDRESSES="op5master1.op5.local,op5master2.op5.local,op5master3.op5.local" monitor-docker:latest
+
+# Remove the dynamicly scaled hosts.
+#
+# Please be aware that this can take some time to remove everything required.
+#
+# A timeout on your docker stop command is strongly recommended to allow the host to remove itself from the other servers
+
+$ docker stop -t 90 op5poller3.op5.local
+$ docker stop -t 90 op5poller1.op5.local
+$ docker stop -t 90 op5poller2.op5.local
+$ docker stop -t 90 op5poller4.op5.local
+$ docker stop -t 90 op5master1.op5.local
+$ docker stop -t 90 op5master3.op5.local
+$ docker stop -t 90 op5master2.op5.local

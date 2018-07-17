@@ -9,6 +9,47 @@
 #
 #############################################
 
+#Imported from start.sh
+mkdir -p /etc/snmp
+touch /etc/snmp/snmp.local.conf
+echo "mibs +all" >> /etc/snmp/snmp.local.conf
+mv -f mibs/* /usr/share/snmp/mibs
+chmod g+w /usr/share/snmp/mibs
+chown root:apache /usr/share/snmp/mibs
+
+mkdir -p /opt/monitor/.ssh
+mkdir -p /root/.ssh
+
+chmod -R 700 /opt/monitor/.ssh
+chmod -R 700 /root/.ssh
+
+mv -f /usr/libexec/entrypoint.d/sshd/sshd_config /etc/ssh/sshd_config
+chown root /etc/ssh/sshd_config
+
+cp -f /usr/libexec/entrypoint.d/ssh/* /root/.ssh/
+mv -f /usr/libexec/entrypoint.d/ssh/* /opt/monitor/.ssh/
+
+chmod 600 /etc/ssh/sshd_config
+
+chmod -R 600 /root/.ssh/id_rsa
+chmod -R 640 /root/.ssh/authorized_keys
+chmod -R 644 /root/.ssh/id_rsa.pub
+chmod -R 600 /root/.ssh/config
+
+chmod -R 600 /opt/monitor/.ssh/id_rsa
+chmod -R 640 /opt/monitor/.ssh/authorized_keys
+chmod -R 644 /opt/monitor/.ssh/id_rsa.pub
+chmod -R 600 /opt/monitor/.ssh/config
+
+chown -R root /root/.ssh
+chown -R monitor /opt/monitor/.ssh
+
+chmod -R +x /usr/libexec/entrypoint.d/hooks/ \
+chmod +x /usr/libexec/entrypoint.d/entrypoint.sh \
+chmod +x /usr/libexec/entrypoint.d/hooks.py \
+mv -f /usr/libexec/entrypoint.d/tmux.conf /etc/tmux.conf
+
+
 # Create Array From Comma Delimited List
 #masters=(${MASTER_ADDRESSES//,/ })
 #peers=(${PEER_HOSTNAMES//,/ })
@@ -87,20 +128,18 @@ advertise_masters(){
         do
             if [ $1 == "add" ]; then
                 print "info" "Performing Add On ${masters[i]}"
-                mon sshkey fetch ${masters[i]}
-                asmonitor mon sshkey fetch ${masters[i]}
                 mon node add ${masters[i]} type=master
-                mon node ctrl ${masters[i]} mon node add ${SELF_HOSTNAME} type=poller hostgroup=${HOSTGROUPS} takeover=no
-	            mon node ctrl  ${masters[i]} -- /usr/local/scripts/add_sync.sh ${SELF_HOSTNAME}
-                mon node ctrl ${masters[i]} mon restart
+                mon node ctrl --type=master mon node add ${SELF_HOSTNAME} type=poller hostgroup=${HOSTGROUPS} takeover=no
+	            #mon node ctrl  ${masters[i]} -- /usr/local/scripts/add_sync.sh ${SELF_HOSTNAME}
+                mon node ctrl --type=master mon restart
                 grep -q "notifies = no" /opt/monitor/op5/merlin/merlin.conf || sed -i '/module {/a\        notifies = no' /opt/monitor/op5/merlin/merlin.conf
             else
-                for node in `mon node list --type=master`
+                 for node in `mon node list --type=master`
                     do 
                         print "info" "Performing Remove On $node"
-                        mon node remove "$node"
                         mon node ctrl "$node" mon node remove ${SELF_HOSTNAME}
                         mon node ctrl "$node" mon restart
+                        mon node remove "$node"
                     done
             fi
         done
@@ -112,13 +151,11 @@ advertise_peers(){
     if [ $1 == "add" ]; then
         for i in "${!peers[@]}"
             do
-                nc -z ${peers[i]} 15551
                     if [[ "$?" == "0" ]]; then
                         print "info" "Performing Add On ${peers[i]}"
-                        mon sshkey fetch ${peers[i]}
-                        asmonitor mon sshkey fetch ${peers[i]}
                         mon node add ${peers[i]} type=peer
                         mon node ctrl ${peers[i]} mon node add ${SELF_HOSTNAME} type=peer
+                        #mon node ctrl  ${masters[i]} -- /usr/local/scripts/add_sync.sh ${SELF_HOSTNAME}
                         mon node ctrl ${peers[i]} mon restart
                     else
                         print "error" "${peers[i]} not up, ignoring."
@@ -128,10 +165,11 @@ advertise_peers(){
 		for node in `mon node list --type=peer`
             do 
                 print "info" "Performing Remove On $node"
-                mon node remove "$node"
                 mon node ctrl "$node" mon node remove ${SELF_HOSTNAME}
                 mon node ctrl "$node" mon restart
+                mon node remove "$node"
             done
+
     fi
 }
 
@@ -144,13 +182,13 @@ get_config(){
 }
 
 
-shutdown(){
+shutdown_sigend(){
     # If container is gracefully shutdown with SIGTERM (e.g. docker stop), remove
     # pre-emptively remove itself
     print "warn" "SIGTERM Caught! Removing From Cluster"
-    kill ${!}; trigger_hooks poststop
     advertise_peers remove
     advertise_masters remove
+    kill ${!}; trigger_hooks poststop
 }
 
 
@@ -254,5 +292,5 @@ main(){
 }
 
 # Graceful shutdown handling and run main()
-trap "shutdown" SIGTERM
+trap shutdown_sigend SIGKILL SIGTERM SIGHUP SIGINT EXIT
 main

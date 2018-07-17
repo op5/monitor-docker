@@ -19,6 +19,8 @@ ROOT_PASSWORD=monitor \
 IMPORT_BACKUP= \
 LICENSE_KEY=
 
+STOPSIGNAL SIGTERM
+
 RUN \
     yum -y install epel-release && \
     yum -y install wget nc tmux multitail openssh-server python-requests && \
@@ -42,4 +44,4 @@ RUN \
 # OP5 Web UI, NRPE, Merlind, SSH, SNMPd 
 EXPOSE 80 443 5666 15551 2222 161 162
 
-CMD ["/usr/libexec/entrypoint.d/start.sh"]
+CMD ["/usr/libexec/entrypoint.d/entrypoint.sh"]
