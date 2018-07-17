@@ -1,6 +1,0 @@
-[op5-system-updates-source]
-name=op5 System Sources
-baseurl=http://repos.op5.com/el$releasever/$basearch/system/6/SRPMS
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-op5
-enabled=0
-gpgcheck=1

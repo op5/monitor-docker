@@ -10,11 +10,11 @@
 #############################################
 
 # Create Array From Comma Delimited List
-masters=(${MASTER_ADDRESSES//,/ })
-peers=(${PEER_HOSTNAMES//,/ })
+#masters=(${MASTER_ADDRESSES//,/ })
+#peers=(${PEER_HOSTNAMES//,/ })
 
 # set default password to your set variable 'monitor' by default
-echo 'root:${ROOT_PASSWORD}' | chpasswd
+echo "root:${ROOT_PASSWORD}" | chpasswd
 
 print(){
     if [ $1 == "info" ];then 
@@ -81,59 +81,58 @@ service_online(){
 }
 
 advertise_masters(){
-    if [[ "${IS_POLLER}" =~ ^(yes|YES|Yes)$ ]]; then
-        for i in "${!masters[@]}"
-            do
-                if [ $1 == "add" ]; then
-                    print "info" "Performing Add On ${masters[i]}"
-                    mon sshkey fetch ${masters[i]}
-                    asmonitor mon sshkey fetch ${masters[i]}
-                    mon node add ${masters[i]} type=master
-                    mon node ctrl ${masters[i]} mon node add ${SELF_HOSTNAME} type=poller hostgroup=${HOSTGROUPS} takeover=no
-	                mon node ctrl  ${masters[i]} -- /usr/local/scripts/add_sync.sh ${SELF_HOSTNAME}
-                    mon node ctrl ${masters[i]} mon restart
-                else
-                    for node in `mon node list --type=master`
-                        do 
-                            print "info" "Performing Remove On $node"
-                            mon node remove "$node"
-                            mon node ctrl "$node" mon node remove ${SELF_HOSTNAME}
-                            mon node ctrl "$node" mon restart
-                        done
-                fi
-            done
-    else
-        echo -e "No Masters Added"
+    # Create Array From Comma Delimited List
+    masters=(${MASTER_ADDRESSES//,/ })
+    for i in "${!masters[@]}"
+        do
+            if [ $1 == "add" ]; then
+                print "info" "Performing Add On ${masters[i]}"
+                mon sshkey fetch ${masters[i]}
+                asmonitor mon sshkey fetch ${masters[i]}
+                mon node add ${masters[i]} type=master
+                mon node ctrl ${masters[i]} mon node add ${SELF_HOSTNAME} type=poller hostgroup=${HOSTGROUPS} takeover=no
+	            mon node ctrl  ${masters[i]} -- /usr/local/scripts/add_sync.sh ${SELF_HOSTNAME}
+                mon node ctrl ${masters[i]} mon restart
+                grep -q "notifies = no" /opt/monitor/op5/merlin/merlin.conf || sed -i '/module {/a\        notifies = no' /opt/monitor/op5/merlin/merlin.conf
+            else
+                for node in `mon node list --type=master`
+                    do 
+                        print "info" "Performing Remove On $node"
+                        mon node remove "$node"
+                        mon node ctrl "$node" mon node remove ${SELF_HOSTNAME}
+                        mon node ctrl "$node" mon restart
+                    done
+            fi
+        done
 }
 
 advertise_peers(){
-    if [[ "${IS_PEER}" =~ ^(yes|YES|Yes)$ ]]; then
-        if [ $1 == "add" ]; then
-            for i in "${!peers[@]}"
-                do
-                    nc -z ${peers[i]} 15551
-                        if [[ "$?" == "0" ]]; then
-                            print "info" "Performing Add On ${peers[i]}"
-                            mon sshkey fetch ${peers[i]}
-                            asmonitor mon sshkey fetch ${peers[i]}
-                            mon node add ${peers[i]} type=peer
-                            mon node ctrl ${peers[i]} mon node add ${SELF_HOSTNAME} type=peer
-                            mon node ctrl ${peers[i]} mon restart
-                        else
-                            print "error" "${peers[i]} not up, ignoring."
-                        fi
-                done
-         else
-	    	for node in `mon node list --type=peer`
-                do 
-                    print "info" "Performing Remove On $node"
-                    mon node remove "$node"
-                    mon node ctrl "$node" mon node remove ${SELF_HOSTNAME}
-                    mon node ctrl "$node" mon restart
-                done
-        fi
-    else
-        echo -e "No Masters Added"
+    # Create Array From Comma Delimited List
+    peers=(${PEER_HOSTNAMES//,/ })
+    if [ $1 == "add" ]; then
+        for i in "${!peers[@]}"
+            do
+                nc -z ${peers[i]} 15551
+                    if [[ "$?" == "0" ]]; then
+                        print "info" "Performing Add On ${peers[i]}"
+                        mon sshkey fetch ${peers[i]}
+                        asmonitor mon sshkey fetch ${peers[i]}
+                        mon node add ${peers[i]} type=peer
+                        mon node ctrl ${peers[i]} mon node add ${SELF_HOSTNAME} type=peer
+                        mon node ctrl ${peers[i]} mon restart
+                    else
+                        print "error" "${peers[i]} not up, ignoring."
+                    fi
+            done
+     else
+		for node in `mon node list --type=peer`
+            do 
+                print "info" "Performing Remove On $node"
+                mon node remove "$node"
+                mon node ctrl "$node" mon node remove ${SELF_HOSTNAME}
+                mon node ctrl "$node" mon restart
+            done
+    fi
 }
 
 get_config(){
@@ -162,13 +161,11 @@ keep_swimming(){
     # processes handle SIGTERM                                                      
     # The container must be run with -it for proper console access
     
+    trigger_hooks poststart
     if [ "${debugging}" == "1" ]; then
         read -n1 -r -p "Press Any Key To Enter The Debug Console..."
         debug_console
     else    
-        print "info" "Checking For Online Peers"
-        
-        advertise_peers add 
         
         print "info" "Getting Config From Master"
         get_config
@@ -177,7 +174,6 @@ keep_swimming(){
         wait $!
         
     fi
-    trigger_hooks poststart
 }
 
 debug_console(){
@@ -242,8 +238,18 @@ main(){
     trigger_hooks prestart
     import_backup
     import_license
+    if [[ "${IS_PEER}" =~ ^(yes|YES|Yes)$ ]]; then
+        print "info" "Checking For Online Peers"
+        advertise_peers add 
+    else
+        echo -e "No Peers to Add"
+    fi    
+    if [[ "${IS_POLLER}" =~ ^(yes|YES|Yes)$ ]]; then
+        advertise_masters add
+    else
+        echo -e "No Masters to Add"
+    fi    
     service_online
-    advertise_masters add
     keep_swimming
 }
 
