@@ -1,0 +1,7 @@
+Host *
+  IdentityFile ~/.ssh/id_rsa
+  StrictHostKeyChecking no
+  UserKnownHostsFile=/dev/null
+
+Host *.op5.local
+	Port 2222
