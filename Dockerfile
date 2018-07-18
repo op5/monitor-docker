@@ -3,7 +3,7 @@ FROM centos:6
 # Install EPEL first or else tmux and multitail wont be installed
 COPY /entrypoint.d /usr/libexec/entrypoint.d/
 
-ARG OP5_MONITOR_SOFTWARE_URL=https://d2ubxhm80y3bwr.cloudfront.net/Downloads/op5_monitor_archive/Latest/op5-monitor-latest.tar.gz
+ARG OP5_MONITOR_SOFTWARE_URL=https://d2ubxhm80y3bwr.cloudfront.net/Downloads/op5_monitor_archive/OP5-Monitor-7.4.4-20180711.tar.gz
 
 LABEL op5_version="OP5 Monitor Latest Version"
 LABEL maintainer="OP5,Ken Dobbins"
