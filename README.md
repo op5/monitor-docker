@@ -39,6 +39,8 @@ or, clone this repo to your docker server and build it:
 $ git clone https://github.com/op5/monitor-docker.git
 ```
 
+### If doing a distributed deployment, please make certain to place the rsa keys in place. you need the id_rsa, id_rsa.pub, and the authorized_keys files. Be sure to add the id_rsa.pub you add to the authorized_keys file.
+
 ```sh
 $ docker build --rm -f Dockerfile -t monitor-docker:latest .
 ```
