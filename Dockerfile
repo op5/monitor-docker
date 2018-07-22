@@ -32,13 +32,14 @@ RUN \
     rm -f /tmp/op5-software.tar.gz && \
     rm -rf /tmp/op5-monitor && \
     yum clean all && \
-    chmod +x /usr/libexec/entrypoint.d/start.sh && \
-    # Disable ipv6 binding for postfix
-    # sed -i 's/inet_protocols = all/inet_protocols = ipv4/g' /etc/postfix/main.cf && \
-    # Replace the system() source because inside Docker we can't access /proc/kmsg.
-    # https://groups.google.com/forum/#!topic/docker-user/446yoB0Vx6w
+    chmod +x /usr/libexec/entrypoint.d/entrypoint.sh && \
     sed -i -E 's/^(\s*)system\(\);/\1unix-stream("\/dev\/log");/' /etc/syslog-ng/syslog-ng.conf && \
-	sed -i -E '/\proc\/kmsg/ s/^#*/#/' /etc/syslog-ng/syslog-ng.conf
+    sed -i -E '/\proc\/kmsg/ s/^#*/#/' /etc/syslog-ng/syslog-ng.conf
+
+# Disable ipv6 binding for postfix
+# sed -i 's/inet_protocols = all/inet_protocols = ipv4/g' /etc/postfix/main.cf && \
+# Replace the system() source because inside Docker we can't access /proc/kmsg.
+# https://groups.google.com/forum/#!topic/docker-user/446yoB0Vx6w
 
 
 # OP5 Web UI, NRPE, Merlind, SSH, SNMPd 
