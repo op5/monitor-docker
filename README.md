@@ -183,3 +183,5 @@ Thanks goes to these wonderful people:
 * Ken Dobbins ([@OP5](https://www.op5.com))
 * Robert Claesson ([@OP5](https://www.op5.com))
 * Misiu Pajor [github/misiupajor](https://github.com/misiupajor)
+* Our partners ([Truepath Technologies](https://truepathtechnologies.com/))
+* Several of our contributing customers.
